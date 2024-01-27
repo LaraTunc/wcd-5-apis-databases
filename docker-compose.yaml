@@ -1,0 +1,24 @@
+version: "3"
+services:
+  mysql:
+    image: mysql
+    environment:
+      MYSQL_DATABASE: mydb
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3306:3306"
+    networks:
+      - nodeapp_network
+
+  nodeapp:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+    networks:
+      - nodeapp_network
+
+networks:
+  nodeapp_network:
+    driver: bridge

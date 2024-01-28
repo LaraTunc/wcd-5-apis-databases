@@ -55,3 +55,7 @@ $ yarn start
 # URL to public GitHub repo
 
 https://github.com/LaraTunc/wcd-5-apis-databases
+
+# Building multi platform images
+
+https://docs.docker.com/build/building/multi-platform/

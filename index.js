@@ -7,9 +7,6 @@ const { Client } = require("pg");
 
 const app = express();
 
-console.log("process.env.HOST", process.env.HOST ?? "localhost");
-console.log("process.env.PASSWORD", process.env.PASSWORD ?? "mypassword");
-
 // Create postgresql client
 const client = new Client({
   user: process.env.POSTGRES_USER ?? "postgres",

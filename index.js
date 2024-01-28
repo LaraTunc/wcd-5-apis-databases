@@ -1,21 +1,25 @@
 const express = require("express");
-const mysql = require("mysql");
-const seedDatabase = require("./lib/db_seed");
-const createTable = require("./lib/db_create_table");
+const database = require("./lib/database");
 const favicon = require("serve-favicon");
 const router = express.Router();
+require("dotenv").config();
+const { Client } = require("pg");
 
 const app = express();
 
-// Create MySQL connection pool
-const pool = mysql.createPool({
-  host: "mysql", // Docker container hostname
-  user: "myuser",
-  password: "mypassword",
-  database: "mydb",
+console.log("process.env.HOST", process.env.HOST ?? "localhost");
+console.log("process.env.PASSWORD", process.env.PASSWORD ?? "mypassword");
+
+// Create postgresql client
+const client = new Client({
+  user: process.env.POSTGRES_USER ?? "postgres",
+  host: process.env.HOST ?? "localhost",
+  database: process.env.POSTGRES_DB ?? "postgres",
+  password: process.env.PASSWORD ?? "lara2021",
+  port: 5432,
 });
 
-seedDatabase(pool);
+database.init(client);
 
 // favicon
 app.use(favicon(__dirname + "/public/images/favicon.ico"));
@@ -24,41 +28,61 @@ app.use(favicon(__dirname + "/public/images/favicon.ico"));
 app.use("/", router);
 
 // Route for /
+// Returns the first 10 rows from the data
 router.get("/", (req, res) => {
-  res.status(200).send("Hello, world!");
-  // pool.query("SELECT * FROM nhl_stats LIMIT 10", (error, results, fields) => {
-  //   if (error) {
-  //     console.error("Error retrieving data:", error);
-  //     res.status(500).send("Error retrieving data from database");
-  //   } else {
-  //     res.status(200).json(results);
-  //   }
-  // });
-});
-
-// Route for /players
-router.get("/players", (req, res) => {
-  pool.query("SELECT * FROM nhl_stats", (error, results, fields) => {
+  client.query("SELECT * FROM nhl_stats LIMIT 10", (error, results) => {
     if (error) {
       console.error("Error retrieving data:", error);
       res.status(500).send("Error retrieving data from database");
     } else {
-      res.status(200).json(results);
+      res.status(200).json(results.rows);
     }
   });
 });
 
+// Route for /players
+// Returns the first 10 players from the data
+router.get("/players", (req, res) => {
+  client.query(
+    "SELECT playername FROM nhl_stats LIMIT 10",
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving data:", error);
+        res.status(500).send("Error retrieving data from database");
+      } else {
+        res.status(200).json(results.rows);
+      }
+    }
+  );
+});
+
 // Route for /toronto
+// Returns all players from the Toronto Maple Leafs
 router.get("/toronto", (req, res) => {
-  pool.query(
-    "SELECT * FROM nhl_stats WHERE Team = ?",
-    ["TOR"],
+  client.query(
+    "SELECT playername FROM nhl_stats WHERE team = 'TOR'",
     (error, results, fields) => {
       if (error) {
         console.error("Error retrieving data:", error);
         res.status(500).send("Error retrieving data from database");
       } else {
-        res.status(200).json(results);
+        res.status(200).json(results.rows);
+      }
+    }
+  );
+});
+
+// Route for /points
+// Returns top 10 players leading in points scored
+router.get("/points", (req, res) => {
+  client.query(
+    "SELECT playername, pts FROM nhl_stats ORDER BY pts LIMIT 10",
+    (error, results, fields) => {
+      if (error) {
+        console.error("Error retrieving data:", error);
+        res.status(500).send("Error retrieving data from database");
+      } else {
+        res.status(200).json(results.rows);
       }
     }
   );

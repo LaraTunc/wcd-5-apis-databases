@@ -1,12 +1,16 @@
 version: "3"
 services:
-  mysql:
-    image: mysql
+  postgres:
+    image: postgres
     environment:
-      MYSQL_DATABASE: mydb
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      POSTGRES_DB: mydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
     ports:
-      - "3306:3306"
+      - "5432:5432"
+    expose:
+      - "5432"
     networks:
       - nodeapp_network
 
@@ -16,6 +20,8 @@ services:
       - "3000:3000"
     depends_on:
       - mysql
+    volumes:
+      - ./logs:/var/www/logs
     networks:
       - nodeapp_network
 

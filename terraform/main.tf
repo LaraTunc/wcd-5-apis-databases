@@ -8,11 +8,11 @@ terraform {
 }
 
 variable "AWS_REGION" {}
-variable "PROFILE" {}
+variable "AWS_PROFILE" {}
 variable "KEY_PAIR_NAME" {}
 provider "aws" {
     region = var.AWS_REGION 
-    profile = var.PROFILE 
+    profile =  var.AWS_PROFILE 
 }
 
 # Create an AWS VPC. 
@@ -70,6 +70,37 @@ resource "aws_route_table" "public-route-table" {
 resource "aws_route_table_association" "public-subnet-association" {
   subnet_id = aws_subnet.public-subnet.id
   route_table_id = aws_route_table.public-route-table.id
+}
+
+# Create Elastic IP
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+}
+
+# Create NAT Gateway
+resource "aws_nat_gateway" "nat_gateway" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = aws_subnet.public-subnet.id
+}
+
+# Create Route Table for private subnet which routes all traffic to the NAT Gateway
+resource "aws_route_table" "private_route_table" {
+  vpc_id = aws_vpc.vpc.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_gateway.id
+  }
+
+  tags = {
+    Name = "Private Route Table"
+  }
+}
+
+# Associate Route Table with Private Subnet
+resource "aws_route_table_association" "private_subnet_association" {
+  subnet_id      = aws_subnet.private-subnet.id
+  route_table_id = aws_route_table.private_route_table.id
 }
 
 # Create security groups for the subnets.
@@ -145,24 +176,33 @@ resource "aws_security_group" "private-subnet-sg" {
 # Create and launch an EC2 instance - e.g. Ubuntu 22.04 - into the private subnet created earlier.
 # Download and install a database server in the EC2 instance - e.g. MySQL, PostgreSQL or MongoDB.
 # Start and enable the database server service and ensure the database ports - e.g. 3306, 5432, etc. - are open and able to receive connections.
-resource "aws_instance" "db-server" {
+resource "aws_instance" "database" {
   ami = "ami-0fc5d935ebf8bc3bc"
   instance_type = "t2.small"
   key_name = var.KEY_PAIR_NAME
   vpc_security_group_ids = [aws_security_group.private-subnet-sg.id]
   subnet_id = aws_subnet.private-subnet.id
   associate_public_ip_address = false
+  # user_data = file("../user_data/mysql.sh")
+
+  provisioner "file" {
+    source      = "${path.module}/../user_data/mysql.sh"
+    destination = "/usr/local/bin/mysql.sh"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/../data/nhl-stats.csv"
+    destination = "/usr/local/bin/nhl-stats.csv"
+  }
+
   user_data = <<-EOF
               #!/bin/bash
-              sudo apt update -y
-              sudo apt install mysql-server -y
-              sudo systemctl start mysql
-              sudo systemctl enable mysql
-              sudo ufw allow 3306 # mysql port
+              sudo chmod +x /usr/local/bin/mysql.sh
+              sudo /usr/local/bin/mysql.sh
               EOF
 
   tags = {
-    Name = "eval-5-db-server",
+    Name = "database",
   }
 }
 
@@ -176,22 +216,17 @@ resource "aws_instance" "db-server" {
 # Node 18
 # Express library
 
-resource "aws_instance" "api-server" {
+resource "aws_instance" "node-api" {
   ami = "ami-0fc5d935ebf8bc3bc"
   instance_type = "t2.small"
   key_name = var.KEY_PAIR_NAME
   vpc_security_group_ids = [aws_security_group.public-subnet-sg.id]
   subnet_id = aws_subnet.public-subnet.id
   associate_public_ip_address = true
-  user_data = <<-EOF
-              #!/bin/bash
-              sudo apt update -y
-              sudo apt install python3-pip -y
-              sudo pip3 install fastapi uvicorn
-              EOF
+  user_data = file("../user_data/api.sh")
 
   tags = {
-    Name = "eval-5-api-server",
+    Name = "api",
   }
 }
 

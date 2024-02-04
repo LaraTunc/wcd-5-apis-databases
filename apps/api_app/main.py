@@ -24,10 +24,82 @@ async def get_all():
     try:
         # Execute SQL query to retrieve all items from the table
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM my_table LIMIT 10"
+            sql = "SELECT * FROM nhl_stats LIMIT 10"
             cursor.execute(sql)
             result = cursor.fetchall()
             logger.info("Successfully retrieved 10 items from the database", result)
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"MySQL Error: {str(e)}")
+    finally:
+        connection.close()
+
+    return result 
+
+@app.get("/players")
+async def get_players():
+    logger.info("Handling GET request to /players")
+    connection = pymysql.connect(host= os.environ.get('MYSQL_HOST') or "localhost", 
+                                 port=3306, 
+                                 user= os.environ.get('MYSQL_USER'),
+                                 password= os.environ.get('MYSQL_PASSWORD'),
+                                 database= os.environ.get('MYSQL_DATABASE'))
+    
+    try:
+        # Execute SQL query to retrieve all items from the table
+        with connection.cursor() as cursor:
+            sql = "SELECT playername FROM nhl_stats LIMIT 10"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            logger.info("Successfully retrieved 10 players from the database", result)
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"MySQL Error: {str(e)}")
+    finally:
+        connection.close()
+
+    return result
+
+@app.get("/toronto")
+async def get_toronto():
+    logger.info("Handling GET request to /toronto")
+    connection = pymysql.connect(host= os.environ.get('MYSQL_HOST') or "localhost", 
+                                 port=3306, 
+                                 user= os.environ.get('MYSQL_USER'),
+                                 password= os.environ.get('MYSQL_PASSWORD'),
+                                 database= os.environ.get('MYSQL_DATABASE'))
+    
+    try:
+        # Execute SQL query to retrieve all items from the table
+        with connection.cursor() as cursor:
+            sql = "SELECT playername FROM nhl_stats WHERE team = 'TOR'"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            logger.info("Successfully retrieved Toronto players from the database", result)
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"MySQL Error: {str(e)}")
+    finally:
+        connection.close()
+
+    return result
+
+@app.get("/points")
+async def get_points():
+    logger.info("Handling GET request to /points")
+    connection = pymysql.connect(host= os.environ.get('MYSQL_HOST') or "localhost", 
+                                 port=3306, 
+                                 user= os.environ.get('MYSQL_USER'),
+                                 password= os.environ.get('MYSQL_PASSWORD'),
+                                 database= os.environ.get('MYSQL_DATABASE'))
+    
+    try:
+        # Execute SQL query to retrieve all items from the table
+        with connection.cursor() as cursor:
+            sql = "SELECT playername, pts FROM nhl_stats ORDER BY pts LIMIT 10"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            logger.info("Successfully retrieved players with the most amount of points from the database", result)
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"MySQL Error: {str(e)}")

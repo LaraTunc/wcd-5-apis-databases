@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 
+import os
 import pymysql
+import boto3
+
+s3 = boto3.client("s3")
+
+s3.download_file("lara-2023-02-03-bucket", "nhl-stats.csv", "/usr/local/bin/nhl-stats.csv")
 
 # MySQL connection settings
-connection = pymysql.connect(host='localhost',
-                             user='laratunc',
-                             password='laratunc',
-                             database='my_database')
+connection = pymysql.connect(host= os.environ.get('MYSQL_HOST') or 'localhost',
+                             user= os.environ.get('MYSQL_USER'), 
+                             password= os.environ.get('MYSQL_PASSWORD'),
+                             database= os.environ.get('MYSQL_DATABASE'))
 
 try:
     with connection.cursor() as cursor:

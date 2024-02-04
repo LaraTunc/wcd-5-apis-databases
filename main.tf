@@ -172,10 +172,70 @@ resource "aws_security_group" "private-subnet-sg" {
   }
 }
 
-# Database server.
-# Create and launch an EC2 instance - e.g. Ubuntu 22.04 - into the private subnet created earlier.
-# Download and install a database server in the EC2 instance - e.g. MySQL, PostgreSQL or MongoDB.
-# Start and enable the database server service and ensure the database ports - e.g. 3306, 5432, etc. - are open and able to receive connections.
+# Create s3 to put the csv file
+resource "aws_s3_bucket" "lara-2023-02-03-bucket" {
+  bucket = "lara-2023-02-03-bucket"  
+
+  tags = {
+    Name = "lara-2023-02-03-bucket"
+  }     
+}
+
+resource "aws_s3_object" "nhl_stats_csv" {
+  bucket = aws_s3_bucket.lara-2023-02-03-bucket.id
+  key    = "nhl-stats.csv"
+  source = "./data/nhl-stats.csv"
+}
+
+# Create IAM role for the EC2 instance 
+resource "aws_iam_role" "s3_read_role" {
+  name = "s3_read_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Create IAM policy for the EC2 instance
+resource "aws_iam_policy" "s3_read_policy" {
+  name        = "s3-read-policy"  
+  description = "Allows read access to S3 bucket"
+  policy      = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [
+      {
+        Effect    = "Allow",
+        Action    = [
+          "s3:GetObject", 
+          "s3:List*"
+        ],
+        Resource  = "arn:aws:s3:::lara-2023-02-03-bucket/*"  
+      }
+    ]
+  })
+}
+
+# Attach the policy to the role
+resource "aws_iam_role_policy_attachment" "s3_read_attachment" {
+  role       = aws_iam_role.s3_read_role.name
+  policy_arn = aws_iam_policy.s3_read_policy.arn
+}
+
+# Attach role to an instance profile 
+resource "aws_iam_instance_profile" "s3_read_instance_profile" {
+  name = "s3_read_instance_profile"
+  role = aws_iam_role.s3_read_role.name
+}
+
+# Database server - MySql
 resource "aws_instance" "database" {
   ami = "ami-0fc5d935ebf8bc3bc"
   instance_type = "t2.small"
@@ -183,51 +243,25 @@ resource "aws_instance" "database" {
   vpc_security_group_ids = [aws_security_group.private-subnet-sg.id]
   subnet_id = aws_subnet.private-subnet.id
   associate_public_ip_address = false
-  # user_data = file("../user_data/mysql.sh")
-
-  provisioner "file" {
-    source      = "${path.module}/../user_data/mysql.sh"
-    destination = "/usr/local/bin/mysql.sh"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../data/nhl-stats.csv"
-    destination = "/usr/local/bin/nhl-stats.csv"
-  }
-
-  user_data = <<-EOF
-              #!/bin/bash
-              sudo chmod +x /usr/local/bin/mysql.sh
-              sudo /usr/local/bin/mysql.sh
-              EOF
+  iam_instance_profile = aws_iam_instance_profile.s3_read_instance_profile.name
+  user_data = file("./user_data/mysql.sh")
 
   tags = {
     Name = "database",
   }
 }
 
-# API server.
-# Create and launch an EC2 instance - e.g. Ubuntu 22.04 - into the public subnet created earlier.
-# Download and install packages for an API server.
-# For example for a Python FastAPI API server:
-# Python 3.10.
-# fastapi python library.
-# For MEAN stack NodeJS Express API server:
-# Node 18
-# Express library
-
-resource "aws_instance" "node-api" {
+# API server - FastAPI 
+resource "aws_instance" "api" {
   ami = "ami-0fc5d935ebf8bc3bc"
   instance_type = "t2.small"
   key_name = var.KEY_PAIR_NAME
   vpc_security_group_ids = [aws_security_group.public-subnet-sg.id]
   subnet_id = aws_subnet.public-subnet.id
   associate_public_ip_address = true
-  user_data = file("../user_data/api.sh")
+  user_data = templatefile("./user_data/api.sh", { db_private_ip = aws_instance.database.private_ip })
 
   tags = {
     Name = "api",
   }
 }
-
-#  lesson of 10/23 minute 54 > how to ssh into the db from the api server

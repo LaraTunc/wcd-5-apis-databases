@@ -1,68 +1,71 @@
 # API's and Databases
 
-This project contains a terraform script (./terraform) to provision an AWS vpc, a public subnet with 2 nodes, a private subnet with a database that can communicate with each other. It also has an app that starts a postgres db and seeds it with nhl data from 2023. It exposes 4 endpoints that can be displayed on the browser in json format on port 3000.
+### Overview
 
-# Data
+This project utilizes Terraform to provision an AWS infrastructure consisting of a VPC, a public subnet with two nodes, a NAT gateway, an S3 bucket, and a private subnet housing a database. Additionally, it includes two containerized applications: one that populates a MySQL server running in the private EC2 instance and another that sets up endpoints for querying the private database from the public EC2 instance. The primary objective of this project is to access the public EC2 IP over HTTP and utilize four endpoints to observe real-time results queried from the pre-seeded database.
 
-Data has been collected from for 2023: https://www.rotowire.com/hockey/stats.php
+### Endpoints
+
+The project exposes four endpoints:
+
+1. `/` - Returns the first 10 rows of the database.
+2. `/players` - Retrieves information on the first 10 players.
+3. `/toronto` - Displays details of all Toronto Maple Leafs players.
+4. `/points` - Shows the top 10 players with the highest number of points scored.
+
+### Data
+
+The data utilized in this project was sourced from the year 2023 and obtained from Rotowire.
+
 Example format:
+
 ![data](./public/images/data.png)
 
-# Architecture
+### Architecture
 
 ![architecture](./public/images/architecture.png)
 
-# Prerequisites
+### Prerequisites
 
-- [Terraform](https://www.terraform.io/downloads.html) (version 0.15.0)
-- [Pip]
-- [mysql]
-- [AWS CLI](https://aws.amazon.com/cli/) (optional, version 2.2.0)
+Before proceeding, ensure you have the following prerequisites installed:
 
-### Installation
+- [Terraform](https://developer.hashicorp.com/terraform/install) (version 0.15.0)
+- [Python](https://docs.python.org/3/using/index.html)
+- [Pip](https://pip.pypa.io/en/stable/installation/)
 
-1. Install Terraform: [Terraform Installation Guide](https://learn.hashicorp.com/tutorials/terraform/install-cli)
-2. Install pip
-3. Install AWS CLI (optional): [AWS CLI Installation Guide](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
+### How to run
 
-# How to run
+To run the project:
 
-- Export your env variables or create them in .tfvars: `AWS_REGION`, `AWS_PROFILE`, `KEY_PAIR_NAME`
-- To run
+Export your environment variables or create them in a .tfvars file: AWS_REGION, AWS_PROFILE, KEY_PAIR_NAME.
+Execute the following commands:
 
 ```sh
-$ cd /terraform
 $ terraform plan
 $ terraform apply --auto-approve
 ```
 
-- To destroy after
+To destroy the resources afterward:
 
 ```sh
 $ terraform destroy --auto-approve
 ```
 
-- Display the public ipv4 of the ec2 instance crated: `http://<your-aws-public-ip-address>` and see that it displays the first 10 rows of the dataset.
-- Go to `http://<your-aws-public-ip-address>/players` and see the first 10 players
-- `http://<your-aws-public-ip-address>/toronto` will show all the toronto maple leafs players
-- `http://<your-aws-public-ip-address>/points` will show the 10 players that has the most amount of points scored
+- Access the public IPv4 address of the EC2 instance created: Visit `http://<your-aws-public-ip-address>` to view the first 10 rows of the dataset.
+- Navigate to:
+  - `http://<your-aws-public-ip-address>/players` to see details on the first 10 players.
+  - `http://<your-aws-public-ip-address>/toronto` to explore information about all Toronto Maple Leafs players.
+  - `http://<your-aws-public-ip-address>/points` to discover the top 10 players with the highest points scored.
 
-# How to run the app locally
-
-- Start your MySql server on localhost
-- Run the app locally
-
-```sh
-$ pip3 install -r requirements.txt
-$ sudo uvicorn main:app --host 0.0.0.0 --port 80
-```
-
-- Go on your browser `http://localhost:3000/` to see the results and play with the different endpoints.
-
-# URL to public GitHub repo
+### URL to public GitHub repo
 
 https://github.com/LaraTunc/wcd-5-apis-databases
 
-# Building multi platform images
+### Docker Images
+
+FastApi endpoints: https://hub.docker.com/repository/docker/laratunc/fastapi_app/general
+MySql seeder: https://hub.docker.com/repository/docker/laratunc/mysql_app/general
+
+### Building multi platform images
 
 https://docs.docker.com/build/building/multi-platform/

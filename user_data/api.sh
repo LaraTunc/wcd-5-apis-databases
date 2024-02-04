@@ -25,6 +25,6 @@ echo "Docker installed"
 sudo docker pull laratunc/fastapi_app
 echo "Docker image pulled for fastapi app" 
 
-sudo docker run -d -p 80:80 -e MYSQL_PASSWORD=laratunc -e MYSQL_DATABASE=my_database -e MYSQL_USER=laratunc -e MYSQL_HOST=${db_private_ip} laratunc/fastapi_app
+sudo docker run -d --network=host -p 80:80 -e MYSQL_PASSWORD=laratunc -e MYSQL_DATABASE=my_database -e MYSQL_USER=laratunc -e MYSQL_HOST=${db_private_ip} laratunc/fastapi_app
 
 

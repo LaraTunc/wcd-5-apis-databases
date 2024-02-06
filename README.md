@@ -1,10 +1,10 @@
 # API's and Databases
 
-### Overview
+## Overview
 
 This project utilizes Terraform to provision an AWS infrastructure consisting of a VPC, a public subnet with two nodes, a NAT gateway, an S3 bucket, and a private subnet housing a database. Additionally, it includes two containerized applications: one that populates a MySQL server running in the private EC2 instance and another that sets up endpoints for querying the private database from the public EC2 instance. The primary objective of this project is to access the public EC2 IP over HTTP and utilize four endpoints to observe real-time results queried from the pre-seeded database.
 
-### Endpoints
+## Endpoints
 
 The project exposes four endpoints:
 
@@ -13,7 +13,7 @@ The project exposes four endpoints:
 3. `/toronto` - Displays details of all Toronto Maple Leafs players.
 4. `/points` - Shows the top 10 players with the highest number of points scored.
 
-### Data
+## Data
 
 The data utilized in this project was sourced from the year 2023 and obtained from Rotowire.
 
@@ -21,11 +21,11 @@ Example format:
 
 ![data](./public/images/data.png)
 
-### Architecture
+## Architecture
 
 ![architecture](./public/images/architecture.png)
 
-### Prerequisites
+## Prerequisites
 
 Before proceeding, ensure you have the following prerequisites installed:
 
@@ -33,7 +33,7 @@ Before proceeding, ensure you have the following prerequisites installed:
 - [Python](https://docs.python.org/3/using/index.html)
 - [Pip](https://pip.pypa.io/en/stable/installation/)
 
-### How to run
+## How to run
 
 To run the project:
 
@@ -57,15 +57,15 @@ $ terraform destroy --auto-approve
   - `http://<your-aws-public-ip-address>/toronto` to explore information about all Toronto Maple Leafs players.
   - `http://<your-aws-public-ip-address>/points` to discover the top 10 players with the highest points scored.
 
-### URL to public GitHub repo
+## URL to public GitHub repo
 
 https://github.com/LaraTunc/wcd-5-apis-databases
 
-### Docker Images
+## Docker Images
 
 FastApi endpoints: https://hub.docker.com/repository/docker/laratunc/fastapi_app/general
 MySql seeder: https://hub.docker.com/repository/docker/laratunc/mysql_app/general
 
-### Building multi platform images
+## Building multi platform images
 
 https://docs.docker.com/build/building/multi-platform/
